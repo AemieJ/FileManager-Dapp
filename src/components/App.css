@@ -1,0 +1,9 @@
+.navbar {
+    min-height: 80px;
+  }
+
+.center { 
+    position: relative;
+    left: 50%;
+    transform: translatex(-50%);
+}
