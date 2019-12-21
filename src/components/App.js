@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import logo from '../logo.png';
 import './App.css';
 import { read } from 'fs';
+import Web3 from 'web3';
+//import FileHandler from '../abis/FileHandler.json';
 
 const ipfsClient = require('ipfs-http-client');
 //Connect to ipfs daemon API server
@@ -9,16 +11,41 @@ const ipfs = ipfsClient({host: 'ipfs.infura.io', port: '5001',  protocol: 'https
 
 class App extends Component {
 
-  componentDidMount() {
+  async componentDidMount() {
     document.title = "Decentralized File System";
+  }
+
+  async componentWillMount() {
+    await this.loadWeb3();
+    await this.loadBlockchainData();
   }
 
   constructor(props) {
     super(props);
     this.state = { 
-      buffer : null,
-      hashFile : ""
+      buffer   : null,
+      hashFile : "",
+      account : ""
      };
+  }
+
+  async loadWeb3() {
+    if(window.ethereum) {
+      window.web3 = new Web3(window.ethereum);
+    } if(window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider);
+    } else {
+      window.alert('Connect to metamask');
+    }
+  }
+
+  async loadBlockchainData() {
+    const web3 = window.web3;
+    const accounts = web3.eth.getAccounts();
+    this.setState({account : accounts[0]});
+    const networkId = web3.eth.net.getId();
+    const networkData = FileHandler.network[networkId];
+    
   }
 
   captureFile = (event)=>{
@@ -61,6 +88,11 @@ class App extends Component {
               rel="noopener noreferrer"
             >Ethereum with IPFS
             </a>
+            <ul className="navbar-nav px-3">
+              <li className="nav-item text-nowrap d-none d-sm-none d-sm-block">
+                  <small className="text-white"> {this.set.accounts}</small>
+              </li>
+            </ul>
           </div>
         </nav><br/> <br/> <br/>
         
