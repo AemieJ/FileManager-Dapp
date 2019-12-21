@@ -16,7 +16,8 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = { 
-      buffer : null
+      buffer : null,
+      hashFile : ""
      };
   }
 
@@ -35,13 +36,15 @@ class App extends Component {
   // hash : "QmRqqE4wCB9txQpv83nNP9f5Pr7aqGTifTKbKgZhGtGHmM"
   // url  : "https://ipfs.infura.io/ipfs/QmRqqE4wCB9txQpv83nNP9f5Pr7aqGTifTKbKgZhGtGHmM"
   submitFile = (event)=>{
-    event.preventDefault();
+    event.preventDefault()
     console.log("Submitting the form");
     ipfs.add(this.state.buffer, (error, result)=> {
       if (error) {
         console.error(error);
         return;
       }
+      const hash    = result[0].hash;
+      this.setState({hashFile : hash});
       console.log("Ipfs result: ", result);
     });
   }
@@ -70,7 +73,7 @@ class App extends Component {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <img src={logo} className="App-logo" alt="logo" />
+                  <img src={`https://ipfs.infura.io/ipfs/${this.set.hashFile}`} className="App-logo" height="150px" width="120px" />
                 </a>
                 <p> &nbsp; </p>
                 <h2> File Decentralization </h2>
