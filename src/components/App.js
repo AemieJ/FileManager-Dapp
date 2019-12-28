@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import logo from '../logo.png';
+import FileHandler from '../abis/FileHandler.json';
 import './App.css';
 import { read } from 'fs';
 import Web3 from 'web3';
@@ -24,29 +25,44 @@ class App extends Component {
     super(props);
     this.state = { 
       buffer   : null,
-      hashFile : "",
+      contract : null,
+      hashFile : "QmP6M6YwpBDJbQoiYwTukYhec2z539Nwxva6PYMuzLiSAL",
       account : ""
      };
   }
 
+  async loadBlockchainData() {
+    const web3 = window.web3;
+    const accounts = await web3.eth.getAccounts();
+    this.setState({account: accounts[0]});
+
+    const networkId = await web3.eth.net.getId();
+    const networkData = FileHandler.networks[networkId];
+    if(networkData) {
+        const abi = FileHandler.abi;
+        const address = networkData.address;
+        // Create a web3 representation of the contract to be able to use the functions of the smart contract FileHandler
+        const contract = new web3.eth.Contract(abi, address);
+        this.setState({ contract });
+        const hashFile = await contract.methods.getHash().call();
+        this.setState({ hashFile });
+
+    } else {
+      window.alert("Smart contract not deployed on detected network");
+    }
+    
+  }
+
   async loadWeb3() {
-    if(window.ethereum) {
+    if(window.ethereum){
       window.web3 = new Web3(window.ethereum);
     } if(window.web3) {
       window.web3 = new Web3(window.web3.currentProvider);
     } else {
-      window.alert('Connect to metamask');
+      window.alert('Use Metamask');
     }
   }
 
-  async loadBlockchainData() {
-    const web3 = window.web3;
-    const accounts = web3.eth.getAccounts();
-    this.setState({account : accounts[0]});
-    const networkId = web3.eth.net.getId();
-    const networkData = FileHandler.network[networkId];
-    
-  }
 
   captureFile = (event)=>{
     event.preventDefault()
@@ -70,27 +86,33 @@ class App extends Component {
         console.error(error);
         return;
       }
-      const hash    = result[0].hash;
-      this.setState({hashFile : hash});
+      const hashFile = result[0].hash;
       console.log("Ipfs result: ", result);
+
+      const contract = this.state.contract;
+      contract.methods.setHash(hashFile).send({from: this.state.account}, (error, transactionHash )=>{
+          if(error) 
+            console.error(error);
+      });
+
     });
-  }
+}
 
   render() {
     return (
       <div>
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-          <div class="center">
+          <div className="center">
             <a
-              className="navbar-brand col-sm-3 col-md-2 mr-0"
+              className="navbar-brand col-sm-3 col-md-2 mr-0 text-center"
               href="http://www.github.com/AemieJ"
               target="_blank"
               rel="noopener noreferrer"
-            >Ethereum with IPFS
+            > &nbsp; &nbsp; &nbsp; Ethereum with IPFS
             </a>
-            <ul className="navbar-nav px-3">
+            <ul className="navbar-nav">
               <li className="nav-item text-nowrap d-none d-sm-none d-sm-block">
-                  <small className="text-white"> {this.set.accounts}</small>
+                  <small className="text-white"> {this.state.account } </small>
               </li>
             </ul>
           </div>
@@ -101,17 +123,17 @@ class App extends Component {
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto">
                 <a
-                  href="https://www.github.com/AemieJ"
+                  href={`https://ipfs.infura.io/ipfs/${this.state.hashFile}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <img src={`https://ipfs.infura.io/ipfs/${this.set.hashFile}`} className="App-logo" height="150px" width="120px" />
+                  <img src={`${logo}`} className="App-logo" height="150px" width="120px" />
                 </a>
                 <p> &nbsp; </p>
                 <h2> File Decentralization </h2>
                 <p> &nbsp; </p>
 
-                <form onSubmit={this.submitFile} > 
+                <form onSubmit={this.submitFile}> 
                   <input type="file" onChange={this.captureFile} /> &nbsp; &nbsp;
                   <input type="submit" />
                 </form>
